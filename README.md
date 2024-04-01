@@ -17,3 +17,63 @@ final class SendableClass: Sendable {
     }
 }
 ```
+
+## Why not a property wrapper?
+
+It is possible to write a property wrapper that provides the `Sendable` checking:
+
+```swift
+import os
+
+@propertyWrapper
+struct UnsafeSendable<Wrapped>: @unchecked Sendable {
+    var wrappedValue: Wrapped
+
+    init(wrappedValue: Wrapped) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(initialValue: Wrapped) {
+        wrappedValue = initialValue
+    }
+}
+
+final class SendableClass: Sendable {
+    @UnsafeSendable
+    private var logger: Logger
+
+    init(logger: Logger = Logger()) {
+        self.logger = logger
+    }
+}
+```
+
+However, this provides private mutability via `_wrappedProperty`. To fix this we would need to mark `wrappedValue` as `let`, however this then will not allow for the value to be created in the initialiser:
+
+```swift
+import os
+
+@propertyWrapper
+struct UnsafeSendable<Wrapped>: @unchecked Sendable {
+    let wrappedValue: Wrapped
+
+    init(wrappedValue: Wrapped) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(initialValue: Wrapped) {
+        wrappedValue = initialValue
+    }
+}
+
+final class SendableClass: Sendable {
+    @UnsafeSendable
+    private var logger: Logger
+
+    init(logger: Logger = Logger()) {
+        self.logger = logger // Cannot assign to property: 'logger' is a get-only property
+    }
+}
+```
+
+To support this the
