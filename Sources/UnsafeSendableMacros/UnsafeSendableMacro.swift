@@ -46,7 +46,7 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
         guard
             let variable = declaration.as(VariableDeclSyntax.self),
             let binding = variable.bindings.first,
-            let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier
+            let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.trimmed.identifier
         else {
             throw ErrorDiagnosticMessage(id: "declaration-not-variable", message: "@UnsafeSendable must be attached to a property")
         }
