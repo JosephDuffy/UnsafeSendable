@@ -38,9 +38,17 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
+        guard
+            let variable = declaration.as(VariableDeclSyntax.self),
+            let binding = variable.bindings.first,
+            let typeAnnotation = binding.typeAnnotation
+        else {
+            throw ErrorDiagnosticMessage(id: "can-not-find-type", message: "@UnsafeSendable requires an explicit type")
+        }
+
         let storageName = try storageNameForProperty(declaration)
         return [
-            "private var \(raw: storageName): UnsafeSendable<NotSendableType>"
+            "private var \(raw: storageName): UnsafeSendable<\(typeAnnotation.type.trimmed)>"
         ]
     }
 
