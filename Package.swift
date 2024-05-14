@@ -18,11 +18,20 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
 
         // Library that exposes a macro as part of its API, which is used in client programs.
-        .target(name: "UnsafeSendable", dependencies: ["UnsafeSendableMacros"]),
+        .target(
+            name: "UnsafeSendable", 
+            dependencies: ["UnsafeSendableMacros"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
+            ]
+        ),
 
         // A client of the library, which is able to use the macro in its own code.
         .executableTarget(name: "UnsafeSendableClient", dependencies: ["UnsafeSendable"]),

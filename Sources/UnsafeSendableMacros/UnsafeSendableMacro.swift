@@ -1,5 +1,9 @@
 import SwiftCompilerPlugin
+#if canImport(SwiftSyntax510)
 import SwiftDiagnostics
+#else
+@preconcurrency import SwiftDiagnostics
+#endif
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
