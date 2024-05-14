@@ -19,9 +19,13 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
             }
             """,
             """
+            @inlinable
+            @inline(__always)
             get {
                 \(raw: storageName).wrapped
             }
+            @inlinable
+            @inline(__always)
             set {
                 \(raw: storageName).wrapped = newValue
             }
