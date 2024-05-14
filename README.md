@@ -1,8 +1,6 @@
 # UnsafeSendable
 
-A quick POC for a macro that can make a property `Sendable` without the need for marking the outer type `@unchecked Sendable` or using `@preconncurrency import`.
-
-For example, [`Logger` should be sendable](https://forums.developer.apple.com/forums/thread/747816?answerId=781922022#781922022) and the [`shared` instance of `FileManager` is thread-safe](https://forums.developer.apple.com/forums/thread/747816?answerId=781922022#781922022), but these types are not marked `Sendable`.
+A macro that can make a property `Sendable` without the need for marking the outer type `@unchecked Sendable` or using `@preconncurrency import`.
 
 ```swift
 import os
@@ -18,9 +16,17 @@ final class SendableClass: Sendable {
 }
 ```
 
+## Why would you want this?
+
+Adding `@unchecked Sendable` to a type can lead to bugs being introduced in the future if a non-sendable property is later added. It is not possible to mark a single property `@unchecked Sendable` (or anything to that effect).
+
+Rather than effectively turning off the sendability checking for _all_ properties of the type this allows the checking to be turned off for a _single_ property.
+
+This is particularly useful when using a types that _should_ be marked `Sendable` but isn't (such as [`Logger`](https://forums.developer.apple.com/forums/thread/747816?answerId=781922022#781922022)), or when some instances of a type _is_ thread-safe but cannot be marked `Sendable`, such as the [`shared` instance of `FileManager`](https://developer.apple.com/documentation/foundation/filemanager#1651181).
+
 ## Why not a property wrapper?
 
-It is possible to write a property wrapper that provides the `Sendable` checking:
+It is possible to write a property wrapper that produces similar results:
 
 ```swift
 import os
@@ -48,7 +54,7 @@ final class SendableClass: Sendable {
 }
 ```
 
-However, this provides private mutability via `_wrappedProperty`. To fix this we would need to mark `wrappedValue` as `let`, however this then will not allow for the value to be created in the initialiser:
+However, this provides private mutability because `logger` is a `var`. To fix this we would need to mark `wrappedValue` as `let`, however this then requires 2 separate property wrappers (one mutable, one not) and does not allow for the value to be created in the initialiser: 
 
 ```swift
 import os
@@ -76,4 +82,8 @@ final class SendableClass: Sendable {
 }
 ```
 
-To support this the
+To support all of these scenarios the macro:
+
+- Uses a getter and a setter (which honours `let`, `var`, `private(set)`, etc.)
+- Uses an `init` for the property (which allows for default values, initialisation in the type's `init`, or both)
+- Stores the actual value in a private property
