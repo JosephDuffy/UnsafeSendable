@@ -1,6 +1,5 @@
 @attached(accessor, names: named(init), named(get))
 @attached(peer, names: prefixed(_unsafeSendable_))
-//@attached(peer, names: arbitrary)
 public macro UnsafeSendable() = #externalMacro(module: "UnsafeSendableMacros", type: "UnsafeSendableMacro")
 
 public struct UnsafeSendable<Wrapped>: @unchecked Sendable {
