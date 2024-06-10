@@ -14,8 +14,11 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
         providingAccessorsOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [AccessorDeclSyntax] {
-        let storageName = try storageNameForProperty(declaration)
-        return [
+        guard let variable = declaration.as(VariableDeclSyntax.self) else {
+            throw ErrorDiagnosticMessage(id: "declaration-not-variable", message: "@UnsafeSendable must be attached to a property")
+        }
+        let storageName = try storageNameForProperty(variable)
+        var accessors: [AccessorDeclSyntax] = [
             """
             @storageRestrictions(initializes: \(raw: storageName))
             init(initialValue)  {
@@ -26,11 +29,20 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
             get {
                 \(raw: storageName).wrapped
             }
-            set {
-                \(raw: storageName).wrapped = newValue
-            }
             """
         ]
+
+        if variable.bindingSpecifier.tokenKind == .keyword(.var) {
+            accessors.append(
+                """
+                set {
+                    \(raw: storageName).wrapped = newValue
+                }
+                """
+            )
+        }
+
+        return accessors
     }
 
     public static func expansion(
@@ -46,17 +58,16 @@ public struct UnsafeSendableMacro: AccessorMacro, PeerMacro {
             throw ErrorDiagnosticMessage(id: "can-not-find-type", message: "@UnsafeSendable requires an explicit type")
         }
 
-        let storageName = try storageNameForProperty(declaration)
+        let storageName = try storageNameForProperty(variable)
         return [
-            "private var \(raw: storageName): UnsafeSendable<\(typeAnnotation.type.trimmed)>"
+            "private \(variable.bindingSpecifier.trimmed) \(raw: storageName): UnsafeSendable<\(typeAnnotation.type.trimmed)>"
         ]
     }
 
     private static func storageNameForProperty(
-        _ declaration: some DeclSyntaxProtocol
+        _ variable: VariableDeclSyntax
     ) throws -> String {
         guard
-            let variable = declaration.as(VariableDeclSyntax.self),
             let binding = variable.bindings.first,
             let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.trimmed.identifier
         else {

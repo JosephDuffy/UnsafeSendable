@@ -24,6 +24,11 @@ struct MySendableType: Sendable {
     }
 }
 
+final class SendableClass: Sendable {
+    @UnsafeSendable
+    let actuallySendableProperty: NotSendableType = NotSendableType()
+}
+
 var mySendableType = MySendableType()
 print(mySendableType.actuallySendableProperty.property) // prints 0
 mySendableType.actuallySendableProperty.property = 1
